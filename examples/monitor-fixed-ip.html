@@ -1,0 +1,568 @@
+<!--
+    Meshtastic Node Monitor - Versione Base (IP Fisso)
+    Copyright (C) 2025 Meshtastic Node Monitor Contributors
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meshtastic Node Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #151520;
+            --border: #2a2a3a;
+            --accent: #00d4ff;
+            --accent-dim: #00d4ff33;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --danger: #ff4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, monospace;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            background-image:
+                radial-gradient(circle at 20% 50%, var(--accent-dim) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, #1a1a2e 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, var(--accent), #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+            border-color: var(--accent);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            fill: var(--accent);
+        }
+
+        .value-large {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .value-unit {
+            font-size: 1rem;
+            color: var(--text-dim);
+            margin-left: 4px;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            background: var(--accent-dim);
+            color: var(--accent);
+            margin-top: 10px;
+        }
+
+        .status-indicator.active {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--success);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-weight: 600;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .log-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 60px;
+            margin-top: 15px;
+        }
+
+        .bar {
+            flex: 1;
+            background: var(--accent);
+            opacity: 0.6;
+            border-radius: 2px 2px 0 0;
+            min-height: 4px;
+            transition: opacity 0.2s;
+        }
+
+        .bar:hover {
+            opacity: 1;
+        }
+
+        .ip-display {
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        .signal-bars {
+            display: flex;
+            gap: 3px;
+            align-items: flex-end;
+            height: 20px;
+        }
+
+        .signal-bar {
+            width: 4px;
+            background: var(--text-dim);
+            border-radius: 2px;
+        }
+
+        .signal-bar.active {
+            background: var(--success);
+        }
+
+        .uptime-counter {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .value-large { font-size: 2rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Meshtastic Node</h1>
+            <div class="subtitle">Monitoraggio in tempo reale</div>
+        </header>
+
+        <div class="grid">
+            <!-- Power Card -->
+            <div class="card">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M16 20h-8v-8h-4l8-10 8 10h-4v8zm-2-2v-6h2.5l-4.5-5.5-4.5 5.5h2.5v6h4z"/>
+                    </svg>
+                    Alimentazione
+                </div>
+                <div class="value-large" id="battery-percent">100<span class="value-unit">%</span></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="battery-bar" style="width: 100%"></div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-value" id="voltage">4.49</span>
+                        <span class="stat-label">Volt</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="status-indicator active" id="charging-status">
+                            <span class="status-dot"></span>
+                            In Carica
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WiFi Card -->
+            <div class="card">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>
+                    </svg>
+                    Connettività
+                </div>
+                <div class="ip-display" id="ip-address">192.168.2.191</div>
+                <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                    <div class="signal-bars" id="signal-bars">
+                        <div class="signal-bar" style="height: 6px"></div>
+                        <div class="signal-bar" style="height: 10px"></div>
+                        <div class="signal-bar" style="height: 14px"></div>
+                        <div class="signal-bar" style="height: 18px"></div>
+                    </div>
+                    <span style="color: var(--text-dim); font-size: 0.9rem;">
+                        RSSI: <span id="rssi" style="color: var(--accent); font-family: monospace;">-71</span> dBm
+                    </span>
+                </div>
+                <div class="status-indicator" style="margin-top: 15px;">
+                    <span class="status-dot"></span>
+                    Connesso
+                </div>
+            </div>
+
+            <!-- Radio Card -->
+            <div class="card">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                    Radio LoRa
+                </div>
+                <div class="value-large" id="frequency">869.5<span class="value-unit">MHz</span></div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-value" id="channel">1</span>
+                        <span class="stat-label">Canale</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="utilization">6.6</span>
+                        <span class="stat-label">% Utilizzo</span>
+                    </div>
+                </div>
+                <div class="log-chart" id="airtime-chart">
+                    <!-- Bars generated by JS -->
+                </div>
+            </div>
+
+            <!-- Memory Card -->
+            <div class="card">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M17 3H7c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7V5h10v14zM9 7h6v2H9zm0 4h6v2H9zm0 4h6v2H9z"/>
+                    </svg>
+                    Memoria
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
+                        <span>Heap</span>
+                        <span id="heap-text">19KB / 253KB</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="heap-bar" style="width: 92%; background: linear-gradient(90deg, var(--warning), var(--danger))"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
+                        <span>Filesystem</span>
+                        <span id="fs-text">40KB / 1536KB</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="fs-bar" style="width: 3%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Device Card -->
+            <div class="card">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                    </svg>
+                    Sistema
+                </div>
+                <div style="text-align: center; padding: 20px 0;">
+                    <div class="uptime-counter" id="uptime">02:25:07</div>
+                    <div style="color: var(--text-dim); font-size: 0.85rem; margin-top: 5px;">Uptime</div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-value" id="reboots">6,184</span>
+                        <span class="stat-label">Reboot</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="status-indicator active">
+                            <span class="status-dot"></span>
+                            OK
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traffic Card -->
+            <div class="card">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+                    </svg>
+                    Traffico (Ultimi periodi)
+                </div>
+                <div class="stats-row" style="border: none; margin-top: 0;">
+                    <div class="stat-item">
+                        <span class="stat-value" id="rx-last">142K</span>
+                        <span class="stat-label">RX ultimo</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="tx-last">81K</span>
+                        <span class="stat-label">TX ultimo</span>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-dim); text-align: center;">
+                    Periodi di 1 ora | Storico: 8 periodi
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dati dal tuo JSON
+        const data = {
+            "airtime": {
+                "channel_utilization": 6.56166648864746,
+                "periods_to_log": 8,
+                "rx_all_log": [28318, 68984, 57607, 0, 0, 0, 0, 0],
+                "rx_log": [52244, 66313, 142569, 0, 0, 0, 0, 0],
+                "seconds_per_period": 3600,
+                "seconds_since_boot": 8707,
+                "tx_log": [35261, 31513, 81496, 0, 0, 0, 0, 0],
+                "utilization_tx": 1.50338888168335
+            },
+            "device": {
+                "reboot_counter": 6184
+            },
+            "memory": {
+                "fs_free": 1531904,
+                "fs_total": 1572864,
+                "fs_used": 40960,
+                "heap_free": 19472,
+                "heap_total": 253304,
+                "psram_free": 0,
+                "psram_total": 0
+            },
+            "power": {
+                "battery_percent": 100,
+                "battery_voltage_mv": 4489,
+                "has_battery": "true",
+                "has_usb": "true",
+                "is_charging": "true"
+            },
+            "radio": {
+                "frequency": 869.525024414062,
+                "lora_channel": 1
+            },
+            "wifi": {
+                "ip": "192.168.2.191",
+                "rssi": -71
+            },
+            "status": "ok"
+        };
+
+        // Formattazione numeri
+        const formatNum = (n) => n.toLocaleString('it-IT');
+        const formatTime = (seconds) => {
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        };
+
+        // Popola i dati
+        document.getElementById('battery-percent').innerHTML = `${data.power.battery_percent}<span class="value-unit">%</span>`;
+        document.getElementById('battery-bar').style.width = `${data.power.battery_percent}%`;
+        document.getElementById('voltage').textContent = (data.power.battery_voltage_mv / 1000).toFixed(2);
+        document.getElementById('charging-status').innerHTML = `
+            <span class="status-dot"></span>
+            ${data.power.is_charging === "true" ? 'In Carica' : 'Batteria'}
+        `;
+
+        document.getElementById('ip-address').textContent = data.wifi.ip;
+        document.getElementById('rssi').textContent = data.wifi.rssi;
+
+        // Signal bars animation
+        const rssi = data.wifi.rssi;
+        const bars = document.querySelectorAll('.signal-bar');
+        let activeBars = 0;
+        if (rssi > -50) activeBars = 4;
+        else if (rssi > -60) activeBars = 3;
+        else if (rssi > -70) activeBars = 2;
+        else if (rssi > -80) activeBars = 1;
+
+        bars.forEach((bar, idx) => {
+            if (idx < activeBars) bar.classList.add('active');
+        });
+
+        document.getElementById('frequency').innerHTML =
+            `${(data.radio.frequency).toFixed(1)}<span class="value-unit">MHz</span>`;
+        document.getElementById('channel').textContent = data.radio.lora_channel;
+        document.getElementById('utilization').textContent = data.airtime.channel_utilization.toFixed(1);
+
+        // Airtime chart
+        const chartContainer = document.getElementById('airtime-chart');
+        const maxVal = Math.max(...data.airtime.rx_log, ...data.airtime.tx_log, 1);
+        data.airtime.rx_log.slice(0, 6).forEach((val, idx) => {
+            const height = (val / maxVal) * 100;
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = `${Math.max(height, 10)}%`;
+            bar.title = `Periodo ${idx + 1}: RX ${formatNum(val)}`;
+            chartContainer.appendChild(bar);
+        });
+
+        // Memory
+        const heapUsed = data.memory.heap_total - data.memory.heap_free;
+        const heapPercent = (heapUsed / data.memory.heap_total) * 100;
+        document.getElementById('heap-text').textContent =
+            `${Math.round(heapUsed/1024)}KB / ${Math.round(data.memory.heap_total/1024)}KB`;
+        document.getElementById('heap-bar').style.width = `${heapPercent}%`;
+
+        const fsPercent = (data.memory.fs_used / data.memory.fs_total) * 100;
+        document.getElementById('fs-text').textContent =
+            `${Math.round(data.memory.fs_used/1024)}KB / ${Math.round(data.memory.fs_total/1024)}KB`;
+        document.getElementById('fs-bar').style.width = `${fsPercent}%`;
+
+        // Device
+        document.getElementById('uptime').textContent = formatTime(data.airtime.seconds_since_boot);
+        document.getElementById('reboots').textContent = formatNum(data.device.reboot_counter);
+
+        // Traffic
+        document.getElementById('rx-last').textContent =
+            Math.round(data.airtime.rx_log[2] / 1000) + 'K';
+        document.getElementById('tx-last').textContent =
+            Math.round(data.airtime.tx_log[2] / 1000) + 'K';
+
+        // Auto-refresh simulation (optional)
+        setInterval(() => {
+            data.airtime.seconds_since_boot++;
+            document.getElementById('uptime').textContent =
+                formatTime(data.airtime.seconds_since_boot);
+        }, 1000);
+    </script>
+</body>
+</html>
