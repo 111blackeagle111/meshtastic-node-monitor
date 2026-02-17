@@ -1,0 +1,1418 @@
+<!--
+    Meshtastic Node Monitor - Versione Avanzata (Network Discovery)
+    Copyright (C) 2025 Meshtastic Node Monitor Contributors
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/ >.
+-->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meshtastic Node Monitor - Network Discovery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #151520;
+            --bg-elevated: #1f1f2e;
+            --border: #2a2a3a;
+            --accent: #00d4ff;
+            --accent-dim: #00d4ff33;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --danger: #ff4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, monospace;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            background-image:
+                radial-gradient(circle at 20% 50%, var(--accent-dim) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, #1a1a2e 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, var(--accent), #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .discovery-panel {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .discovery-panel.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .discovery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .discovery-title {
+            font-size: 1.2rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scan-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .quick-test {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .scan-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .range-input {
+            width: 100%;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        .range-input:focus {
+            border-color: var(--accent);
+        }
+
+        .range-hint {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .log-console {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .log-entry.error { color: var(--danger); }
+        .log-entry.success { color: var(--success); }
+        .log-entry.info { color: var(--accent); }
+
+        .scan-progress {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .scan-progress.active {
+            display: block;
+        }
+
+        .scan-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .discovery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .node-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .node-item:hover {
+            border-color: var(--accent);
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+        }
+
+        .node-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--success);
+        }
+
+        .node-ip {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .node-info {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .node-rssi {
+            color: var(--success);
+        }
+
+        .ip-config {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .ip-input, .refresh-input {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .ip-input {
+            width: 180px;
+        }
+
+        .refresh-input {
+            width: 80px;
+            text-align: center;
+        }
+
+        .ip-input:focus, .refresh-input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 42px;
+        }
+
+        .btn:hover {
+            background: #00ff88;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .btn-scan {
+            background: linear-gradient(135deg, var(--accent), #0088ff);
+            border: none;
+        }
+
+        .btn-scan:hover {
+            background: linear-gradient(135deg, #00ff88, var(--accent));
+        }
+
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: rgba(255, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            height: 42px;
+        }
+
+        .status-badge.online {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--success);
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+
+        .scan-stats {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-align: center;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            opacity: 0.7;
+        }
+
+        .card.active {
+            opacity: 1;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+            border-color: var(--accent);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+            opacity: 0.5;
+        }
+
+        .card.active::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            fill: var(--accent);
+        }
+
+        .value-large {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            min-height: 3rem;
+        }
+
+        .value-unit {
+            font-size: 1rem;
+            color: var(--text-dim);
+            margin-left: 4px;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            background: var(--accent-dim);
+            color: var(--accent);
+            margin-top: 10px;
+        }
+
+        .status-indicator.active {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--success);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-weight: 600;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            min-height: 1.2rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .log-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 60px;
+            margin-top: 15px;
+        }
+
+        .bar {
+            flex: 1;
+            background: var(--accent);
+            opacity: 0.6;
+            border-radius: 2px 2px 0 0;
+            min-height: 4px;
+            transition: opacity 0.2s, height 0.5s ease;
+        }
+
+        .bar:hover {
+            opacity: 1;
+        }
+
+        .ip-display {
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .signal-bars {
+            display: flex;
+            gap: 3px;
+            align-items: flex-end;
+            height: 20px;
+        }
+
+        .signal-bar {
+            width: 4px;
+            background: var(--text-dim);
+            border-radius: 2px;
+            transition: background 0.3s;
+        }
+
+        .signal-bar.active {
+            background: var(--success);
+        }
+
+        .uptime-counter {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            font-size: 1.1rem;
+            min-height: 1.5rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: var(--bg-dark);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 68, 68, 0.2);
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        .no-results {
+            text-align: center;
+            color: var(--text-dim);
+            padding: 40px;
+            font-style: italic;
+            grid-column: 1 / -1;
+        }
+
+        .divider {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .value-large { font-size: 2rem; }
+            .grid { grid-template-columns: 1fr; }
+            .ip-config { flex-direction: column; width: 100%; align-items: stretch; }
+            .ip-input, .refresh-input { width: 100%; }
+            .btn { width: 100%; justify-content: center; }
+            .input-group { width: 100%; }
+            .discovery-grid { grid-template-columns: 1fr; }
+            .discovery-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Meshtastic Node</h1>
+            <div class="subtitle">Monitoraggio con Network Discovery</div>
+
+            <div class="ip-config">
+                <div class="input-group">
+                    <label class="input-label">Indirizzo IP</label>
+                    <input type="text" id="ip-input" class="ip-input" placeholder="192.168.2.191" value="192.168.2.191">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Refresh (min 10sec)</label>
+                    <input type="number" id="refresh-input" class="refresh-input" value="10" min="10" max="60" step="1">
+                </div>
+
+                <button class="btn" id="connect-btn" onclick="connect()">
+                    <span>Connetti</span>
+                </button>
+
+                <button class="btn btn-scan" id="scan-btn" onclick="toggleDiscovery()">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/>
+                    </svg>
+                    <span>Trova Nodi</span>
+                </button>
+
+                <div class="status-badge" id="conn-status">
+                    <span class="status-dot"></span>
+                    <span>Offline</span>
+                </div>
+            </div>
+            <div class="error-msg" id="error-msg"></div>
+        </header>
+
+        <!-- Discovery Panel -->
+        <div class="discovery-panel" id="discovery-panel">
+            <div class="discovery-header">
+                <div class="discovery-title">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    Network Scanner
+                </div>
+            </div>
+
+            <!-- Test Rapido Singolo IP -->
+            <div class="quick-test">
+                <div class="scan-label">Test Rapido Singolo IP (Debug)</div>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="test-ip" class="range-input" placeholder="192.168.2.191" value="192.168.2.191" style="flex: 1;">
+                    <button class="btn" onclick="testSingleIp()">Test IP</button>
+                </div>
+                <div class="range-hint">
+                    Utile per verificare se il nodo risponde prima di scansionare tutta la rete. Timeout: 3 secondi.
+                </div>
+                <div class="log-console" id="test-log"></div>
+            </div>
+
+            <!-- Range Personalizzato -->
+            <div class="scan-section">
+                <div class="scan-label">Range Personalizzato</div>
+                <input type="text" id="range-input" class="range-input" placeholder="192.168.2.0/24 oppure 192.168.2.1-50" value="192.168.2.0/24">
+                <div class="range-hint">
+                    Formati: CIDR (192.168.2.0/24), Range (192.168.2.1-50), Lista (IP1,IP2,IP3).
+                    <strong>Nota:</strong> Se usi HTTPS, il browser blocca HTTP. Apri questo file con HTTP o disabilita CORS.
+                </div>
+                <button class="btn btn-full" id="scan-range-btn" onclick="startRangeScan()">
+                    Scansiona Range
+                </button>
+            </div>
+
+            <div class="divider">oppure</div>
+
+            <!-- Scansione Automatica -->
+            <div class="scan-section">
+                <div class="scan-label">Scansione Automatica</div>
+                <div class="range-hint" style="margin-bottom: 10px;">
+                    Rileva automaticamente la subnet e scansiona i range comuni
+                </div>
+                <button class="btn btn-secondary btn-full" id="auto-scan-btn" onclick="startNetworkScan()">
+                    Scansione Automatica Rete
+                </button>
+            </div>
+
+            <div class="scan-progress" id="scan-progress">
+                <div class="scan-progress-bar" id="scan-bar"></div>
+            </div>
+
+            <div class="scan-stats" id="scan-stats"></div>
+
+            <div class="discovery-grid" id="discovery-results">
+                <div class="no-results">Inserisci un range e premi "Scansiona Range" per cercare i nodi</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card" id="card-power">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M16 20h-8v-8h-4l8-10 8 10h-4v8zm-2-2v-6h2.5l-4.5-5.5-4.5 5.5h2.5v6h4z"/></svg>
+                    Alimentazione
+                </div>
+                <div class="value-large" id="battery-percent">--<span class="value-unit">%</span></div>
+                <div class="progress-bar"><div class="progress-fill" id="battery-bar" style="width: 0%"></div></div>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-value" id="voltage">--</span><span class="stat-label">Volt</span></div>
+                    <div class="stat-item"><span class="status-indicator" id="charging-status"><span class="status-dot"></span>--</span></div>
+                </div>
+            </div>
+
+            <div class="card" id="card-wifi">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+                    Connettività
+                </div>
+                <div class="ip-display" id="ip-address">--</div>
+                <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                    <div class="signal-bars" id="signal-bars">
+                        <div class="signal-bar" style="height: 6px"></div>
+                        <div class="signal-bar" style="height: 10px"></div>
+                        <div class="signal-bar" style="height: 14px"></div>
+                        <div class="signal-bar" style="height: 18px"></div>
+                    </div>
+                    <span style="color: var(--text-dim); font-size: 0.9rem;">RSSI: <span id="rssi" style="color: var(--accent); font-family: monospace;">--</span> dBm</span>
+                </div>
+                <div class="status-indicator" style="margin-top: 15px;"><span class="status-dot"></span>WiFi</div>
+            </div>
+
+            <div class="card" id="card-radio">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    Radio LoRa
+                </div>
+                <div class="value-large" id="frequency">--<span class="value-unit">MHz</span></div>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-value" id="channel">--</span><span class="stat-label">Canale</span></div>
+                    <div class="stat-item"><span class="stat-value" id="utilization">--</span><span class="stat-label">% Utilizzo</span></div>
+                </div>
+                <div class="log-chart" id="airtime-chart"></div>
+            </div>
+
+            <div class="card" id="card-memory">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7V5h10v14zM9 7h6v2H9zm0 4h6v2H9zm0 4h6v2H9z"/></svg>
+                    Memoria
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;"><span>Heap</span><span id="heap-text">-- / --</span></div>
+                    <div class="progress-bar"><div class="progress-fill" id="heap-bar" style="width: 0%; background: linear-gradient(90deg, var(--warning), var(--danger))"></div></div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;"><span>Filesystem</span><span id="fs-text">-- / --</span></div>
+                    <div class="progress-bar"><div class="progress-fill" id="fs-bar" style="width: 0%"></div></div>
+                </div>
+            </div>
+
+            <div class="card" id="card-device">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                    Sistema
+                </div>
+                <div style="text-align: center; padding: 20px 0;">
+                    <div class="uptime-counter" id="uptime">--:--:--</div>
+                    <div style="color: var(--text-dim); font-size: 0.85rem; margin-top: 5px;">Uptime</div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-value" id="reboots">--</span><span class="stat-label">Reboot</span></div>
+                    <div class="stat-item"><span class="status-indicator" id="system-status"><span class="status-dot"></span>--</span></div>
+                </div>
+            </div>
+
+            <div class="card" id="card-traffic">
+                <div class="card-header">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+                    Traffico (Ultimi periodi)
+                </div>
+                <div class="stats-row" style="border: none; margin-top: 0;">
+                    <div class="stat-item"><span class="stat-value" id="rx-last">--</span><span class="stat-label">RX ultimo</span></div>
+                    <div class="stat-item"><span class="stat-value" id="tx-last">--</span><span class="stat-label">TX ultimo</span></div>
+                </div>
+                <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-dim); text-align: center;">
+                    <span id="last-update">Configura IP e intervallo, poi premi Connetti</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval = null;
+        let currentData = null;
+        let isScanning = false;
+
+        const savedIp = localStorage.getItem('meshtastic_ip');
+        const savedRefresh = localStorage.getItem('meshtastic_refresh_interval');
+
+        if (savedIp) document.getElementById('ip-input').value = savedIp;
+        if (savedRefresh) document.getElementById('refresh-input').value = savedRefresh;
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('test-log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('test-log').innerHTML = '';
+        }
+
+        const formatNum = (n) => n ? n.toLocaleString('it-IT') : '--';
+        const formatTime = (seconds) => {
+            if (!seconds) return '--:--:--';
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        };
+
+        function showError(msg) {
+            const errEl = document.getElementById('error-msg');
+            errEl.textContent = msg;
+            errEl.classList.add('show');
+            setTimeout(() => errEl.classList.remove('show'), 5000);
+        }
+
+        function toggleDiscovery() {
+            const panel = document.getElementById('discovery-panel');
+            panel.classList.toggle('active');
+        }
+
+        // Test singolo IP con logging dettagliato
+        async function testSingleIp() {
+            const ip = document.getElementById('test-ip').value.trim();
+            if (!ip) {
+                showError('Inserisci un IP valido');
+                return;
+            }
+
+            clearLog();
+            log(`Testing ${ip}...`, 'info');
+
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => {
+                    controller.abort();
+                    log('Timeout dopo 15 secondi', 'error');
+                }, 15000);
+
+                const startTime = performance.now();
+
+                const response = await fetch(`http://${ip}/json/report`, {
+                    method: 'GET',
+                    signal: controller.signal,
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                clearTimeout(timeout);
+                const elapsed = (performance.now() - startTime).toFixed(0);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✓ Trovato in ${elapsed}ms! Status: ${data.status}`, 'success');
+                    log(`  IP: ${ip}, Uptime: ${data.data?.airtime?.seconds_since_boot || 'N/A'}s`, 'success');
+
+                    // Aggiungi automaticamente ai risultati
+                    addNodeToResults({
+                        ip: ip,
+                        data: data,
+                        rssi: data.data?.wifi?.rssi || null,
+                        battery: data.data?.power?.battery_percent || null
+                    });
+                } else {
+                    log(`✗ HTTP ${response.status} dopo ${elapsed}ms`, 'error');
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    log('✗ Richiesta annullata (timeout)', 'error');
+                } else if (error.message.includes('CORS')) {
+                    log('✗ Errore CORS - Il nodo non accetta richieste dal browser', 'error');
+                    log('  Soluzione: Apri chrome con --disable-web-security o usa HTTP', 'info');
+                } else {
+                    log(`✗ Errore: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function parseIpRange(input) {
+            input = input.trim();
+            if (!input) return [];
+
+            if (input.includes('/')) {
+                const [ip, mask] = input.split('/');
+                const maskNum = parseInt(mask);
+                if (!validateIp(ip)) return [];
+
+                if (maskNum === 24) {
+                    const base = ip.substring(0, ip.lastIndexOf('.'));
+                    return generateRange(`${base}.1`, `${base}.254`);
+                } else if (maskNum === 23) {
+                    const parts = ip.split('.');
+                    const third = parseInt(parts[2]);
+                    const base = `${parts[0]}.${parts[1]}`;
+                    let ips = [];
+                    for (let subnet = 0; subnet < 2; subnet++) {
+                        for (let host = 1; host <= 254; host++) {
+                            ips.push(`${base}.${third + subnet}.${host}`);
+                        }
+                    }
+                    return ips;
+                } else if (maskNum > 24 && maskNum <= 30) {
+                    const parts = ip.split('.').map(Number);
+                    const hostBits = 32 - maskNum;
+                    const numHosts = Math.pow(2, hostBits) - 2;
+                    const base = `${parts[0]}.${parts[1]}.${parts[2]}`;
+                    let startHost = parts[3] + 1;
+                    let endHost = parts[3] + numHosts;
+                    if (endHost > 254) endHost = 254;
+                    return generateRange(`${base}.${startHost}`, `${base}.${endHost}`);
+                }
+                return [];
+            }
+
+            if (input.includes('-')) {
+                const [start, end] = input.split('-').map(s => s.trim());
+                if (!start || !validateIp(start)) return [];
+
+                if (!end.includes('.')) {
+                    const base = start.substring(0, start.lastIndexOf('.'));
+                    const endIp = `${base}.${end}`;
+                    if (validateIp(endIp)) {
+                        return generateRange(start, endIp);
+                    }
+                } else {
+                    if (validateIp(end)) {
+                        return generateRange(start, end);
+                    }
+                }
+                return [];
+            }
+
+            if (input.includes(',')) {
+                return input.split(',').map(ip => ip.trim()).filter(validateIp);
+            }
+
+            if (validateIp(input)) {
+                return [input];
+            }
+
+            return [];
+        }
+
+        function validateIp(ip) {
+            const parts = ip.split('.');
+            if (parts.length !== 4) return false;
+            return parts.every(p => {
+                const num = parseInt(p);
+                return !isNaN(num) && num >= 0 && num <= 255 && p === String(num);
+            });
+        }
+
+        function generateRange(start, end) {
+            const ips = [];
+            const startParts = start.split('.').map(Number);
+            const endParts = end.split('.').map(Number);
+
+            const count = (endParts[2] - startParts[2]) * 256 + (endParts[3] - startParts[3]) + 1;
+            if (count > 510) {
+                console.warn('Range troppo grande, limitato a 510 IP');
+                endParts[2] = startParts[2];
+                endParts[3] = startParts[3] + 509;
+                if (endParts[3] > 254) {
+                    endParts[2]++;
+                    endParts[3] -= 254;
+                }
+            }
+
+            for (let third = startParts[2]; third <= endParts[2]; third++) {
+                let startFourth = (third === startParts[2]) ? startParts[3] : 1;
+                let endFourth = (third === endParts[2]) ? endParts[3] : 254;
+
+                for (let fourth = startFourth; fourth <= endFourth; fourth++) {
+                    ips.push(`${startParts[0]}.${startParts[1]}.${third}.${fourth}`);
+                }
+            }
+            return ips;
+        }
+
+        async function startRangeScan() {
+            if (isScanning) return;
+
+            const input = document.getElementById('range-input').value;
+            const ips = parseIpRange(input);
+
+            if (ips.length === 0) {
+                showError('Formato IP non valido');
+                return;
+            }
+
+            if (ips.length > 510) {
+                showError('Range troppo grande! Massimo 510 IP');
+                return;
+            }
+
+            // Se è un singolo IP, usa il test rapido
+            if (ips.length === 1) {
+                document.getElementById('test-ip').value = ips[0];
+                await testSingleIp();
+                return;
+            }
+
+            await runScan(ips, `Scansione ${ips.length} IP...`);
+        }
+
+        async function startNetworkScan() {
+            if (isScanning) return;
+
+            const ranges = [];
+            const localIp = await getLocalIp();
+            if (localIp) {
+                const base = localIp.substring(0, localIp.lastIndexOf('.'));
+                for (let i = 1; i <= 254; i++) {
+                    ranges.push(`${base}.${i}`);
+                }
+            } else {
+                const commonBases = ['192.168.1', '192.168.0', '192.168.8', '192.168.2', '10.0.0'];
+                commonBases.forEach(base => {
+                    for (let i = 1; i <= 50; i++) {
+                        ranges.push(`${base}.${i}`);
+                    }
+                });
+            }
+
+            await runScan(ranges, "Ricerca automatica...");
+        }
+
+        async function runScan(ips, statusText) {
+            isScanning = true;
+            const btn = document.getElementById('scan-range-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loading-spinner"></span> Scansione...';
+            btn.disabled = true;
+
+            const resultsContainer = document.getElementById('discovery-results');
+            const progressBar = document.getElementById('scan-progress');
+            const progressFill = document.getElementById('scan-bar');
+            const statsEl = document.getElementById('scan-stats');
+
+            progressBar.classList.add('active');
+            resultsContainer.innerHTML = '';
+            clearLog();
+            log(`Inizio scansione di ${ips.length} IP...`);
+
+            const foundNodes = [];
+            const total = ips.length;
+            const batchSize = 20; // Ridotto per essere più gentili con la rete
+
+            for (let i = 0; i < ips.length; i += batchSize) {
+                const batch = ips.slice(i, i + batchSize);
+                log(`Scanning batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(total/batchSize)}...`);
+
+                const promises = batch.map(ip => scanSingleIp(ip));
+                const results = await Promise.allSettled(promises);
+
+                results.forEach((result, idx) => {
+                    if (result.status === 'fulfilled' && result.value) {
+                        foundNodes.push(result.value);
+                        addNodeToResults(result.value);
+                        log(`✓ Trovato: ${result.value.ip}`, 'success');
+                    }
+                });
+
+                const progress = Math.min(((i + batchSize) / total) * 100, 100);
+                progressFill.style.width = `${progress}%`;
+                statsEl.textContent = `${statusText} ${Math.min(i + batchSize, total)}/${total} - Trovati: ${foundNodes.length} nodi`;
+            }
+
+            if (foundNodes.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results">Nessun nodo trovato. Prova il "Test IP Specifico" per verificare la connessione.</div>';
+                log('Nessun nodo trovato nel range specificato', 'error');
+            }
+
+            isScanning = false;
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            progressBar.classList.remove('active');
+            statsEl.textContent = `Completato! ${foundNodes.length} nodi trovati su ${total} IP.`;
+            log(`Scansione completata. ${foundNodes.length} nodi trovati.`, 'info');
+        }
+
+        async function getLocalIp() {
+            try {
+                const pc = new RTCPeerConnection({iceServers: []});
+                pc.createDataChannel('');
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        const candidate = pc.localDescription.sdp.match(/c=IN IP4 (\d+\.\d+\.\d+\.\d+)/);
+                        pc.close();
+                        resolve(candidate ? candidate[1] : null);
+                    }, 1000);
+                });
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function scanSingleIp(ip) {
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000); // Aumentato a 3s
+
+                const response = await fetch(`http://${ip}/json/report`, {
+                    method: 'GET',
+                    signal: controller.signal,
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                clearTimeout(timeout);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    return {
+                        ip: ip,
+                        data: data,
+                        rssi: data.data?.wifi?.rssi || null,
+                        battery: data.data?.power?.battery_percent || null
+                    };
+                }
+            } catch (e) {
+                // Silenzioso durante lo scan di massa
+            }
+            return null;
+        }
+
+        function addNodeToResults(node) {
+            const container = document.getElementById('discovery-results');
+            if (container.querySelector('.no-results')) {
+                container.innerHTML = '';
+            }
+
+            // Evita duplicati
+            if (container.querySelector(`[data-ip="${node.ip}"]`)) return;
+
+            const div = document.createElement('div');
+            div.className = 'node-item';
+            div.setAttribute('data-ip', node.ip);
+            div.onclick = () => selectNode(node.ip);
+
+            const rssiText = node.rssi ? `${node.rssi} dBm` : 'N/A';
+            const batteryText = node.battery ? `${node.battery}% 🔋` : '';
+
+            div.innerHTML = `
+                <div class="node-ip">${node.ip}</div>
+                <div class="node-info">
+                    <span class="node-rssi">${rssiText}</span>
+                    <span>${batteryText}</span>
+                </div>
+            `;
+
+            container.appendChild(div);
+        }
+
+        function selectNode(ip) {
+            document.getElementById('ip-input').value = ip;
+            toggleDiscovery();
+            connect();
+        }
+
+        async function connect() {
+            const ip = document.getElementById('ip-input').value.trim();
+            const refreshSeconds = parseInt(document.getElementById('refresh-input').value) || 5;
+
+            if (!ip) {
+                showError('Inserisci un indirizzo IP valido');
+                return;
+            }
+
+            if (refreshSeconds < 10 || refreshSeconds > 60) {
+                showError('L\'intervallo deve essere tra 10 e 60 secondi');
+                return;
+            }
+
+            localStorage.setItem('meshtastic_ip', ip);
+            localStorage.setItem('meshtastic_refresh_interval', refreshSeconds);
+
+            const btn = document.getElementById('connect-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loading-spinner"></span> Connessione...';
+            btn.disabled = true;
+
+            try {
+                await fetchData(ip);
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => fetchData(ip), refreshSeconds * 1000);
+                updateConnectionStatus(true);
+            } catch (error) {
+                showError('Errore: ' + error.message);
+                updateConnectionStatus(false);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function fetchData(ip) {
+            const url = `http://${ip}/json/report`;
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    signal: AbortSignal.timeout(15000)
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                currentData = data;
+                updateUI(data);
+                updateConnectionStatus(true);
+            } catch (error) {
+                updateConnectionStatus(false);
+                throw error;
+            }
+        }
+
+        function updateConnectionStatus(online) {
+            const badge = document.getElementById('conn-status');
+            if (online) {
+                badge.classList.add('online');
+                badge.innerHTML = '<span class="status-dot"></span><span>Online</span>';
+                document.querySelectorAll('.card').forEach(c => c.classList.add('active'));
+            } else {
+                badge.classList.remove('online');
+                badge.innerHTML = '<span class="status-dot"></span><span>Offline</span>';
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+            }
+        }
+
+        function updateUI(data) {
+            if (!data || !data.data) return;
+            const d = data.data;
+
+            if (d.power) {
+                document.getElementById('battery-percent').innerHTML = `${d.power.battery_percent}<span class="value-unit">%</span>`;
+                document.getElementById('battery-bar').style.width = `${d.power.battery_percent}%`;
+                document.getElementById('voltage').textContent = (d.power.battery_voltage_mv / 1000).toFixed(2);
+                const chargingEl = document.getElementById('charging-status');
+                const isCharging = d.power.is_charging === "true" || d.power.is_charging === true;
+                chargingEl.innerHTML = `<span class="status-dot"></span>${isCharging ? 'In Carica' : 'Batteria'}`;
+                chargingEl.classList.toggle('active', isCharging);
+            }
+
+            if (d.wifi) {
+                document.getElementById('ip-address').textContent = d.wifi.ip;
+                document.getElementById('rssi').textContent = d.wifi.rssi;
+                const bars = document.querySelectorAll('.signal-bar');
+                bars.forEach(bar => bar.classList.remove('active'));
+                const rssi = d.wifi.rssi;
+                let activeBars = 0;
+                if (rssi > -50) activeBars = 4;
+                else if (rssi > -60) activeBars = 3;
+                else if (rssi > -70) activeBars = 2;
+                else if (rssi > -80) activeBars = 1;
+                bars.forEach((bar, idx) => { if (idx < activeBars) bar.classList.add('active'); });
+            }
+
+            if (d.radio) {
+                document.getElementById('frequency').innerHTML = `${d.radio.frequency.toFixed(3)}<span class="value-unit">MHz</span>`;
+                document.getElementById('channel').textContent = d.radio.lora_channel;
+            }
+
+            if (d.airtime) {
+                document.getElementById('utilization').textContent = d.airtime.channel_utilization.toFixed(1);
+                document.getElementById('uptime').textContent = formatTime(d.airtime.seconds_since_boot);
+                const chartContainer = document.getElementById('airtime-chart');
+                chartContainer.innerHTML = '';
+                if (d.airtime.rx_log && d.airtime.rx_log.length > 0) {
+                    const validRx = d.airtime.rx_log.filter(x => x > 0);
+                    const maxVal = validRx.length > 0 ? Math.max(...validRx) : 1;
+                    d.airtime.rx_log.slice(0, 8).forEach((val, idx) => {
+                        const height = val > 0 ? (val / maxVal) * 100 : 4;
+                        const bar = document.createElement('div');
+                        bar.className = 'bar';
+                        bar.style.height = `${Math.max(height, 4)}%`;
+                        bar.title = `Periodo ${idx + 1}: RX ${formatNum(val)}`;
+                        chartContainer.appendChild(bar);
+                    });
+                }
+                if (d.airtime.rx_log && d.airtime.rx_log.length > 0) {
+                    const lastRx = [...d.airtime.rx_log].reverse().find(x => x > 0) || 0;
+                    document.getElementById('rx-last').textContent = lastRx > 999 ? (lastRx/1000).toFixed(1) + 'K' : lastRx;
+                }
+                if (d.airtime.tx_log && d.airtime.tx_log.length > 0) {
+                    const lastTx = [...d.airtime.tx_log].reverse().find(x => x > 0) || 0;
+                    document.getElementById('tx-last').textContent = lastTx > 999 ? (lastTx/1000).toFixed(1) + 'K' : lastTx;
+                }
+            }
+
+            if (d.memory) {
+                const heapUsed = d.memory.heap_total - d.memory.heap_free;
+                const heapPercent = (heapUsed / d.memory.heap_total) * 100;
+                document.getElementById('heap-text').textContent = `${Math.round(heapUsed/1024)}KB / ${Math.round(d.memory.heap_total/1024)}KB`;
+                document.getElementById('heap-bar').style.width = `${heapPercent}%`;
+                const fsPercent = (d.memory.fs_used / d.memory.fs_total) * 100;
+                document.getElementById('fs-text').textContent = `${Math.round(d.memory.fs_used/1024)}KB / ${Math.round(d.memory.fs_total/1024)}KB`;
+                document.getElementById('fs-bar').style.width = `${fsPercent}%`;
+            }
+
+            if (d.device) {
+                document.getElementById('reboots').textContent = formatNum(d.device.reboot_counter);
+            }
+
+            const sysStatus = document.getElementById('system-status');
+            if (data.status === 'ok') {
+                sysStatus.innerHTML = '<span class="status-dot"></span>OK';
+                sysStatus.classList.add('active');
+            }
+
+            const refreshSec = document.getElementById('refresh-input').value;
+            document.getElementById('last-update').textContent = `Aggiornato: ${new Date().toLocaleTimeString('it-IT')} (ogni ${refreshSec}s)`;
+        }
+
+        setInterval(() => {
+            if (currentData && currentData.data && currentData.data.airtime) {
+                currentData.data.airtime.seconds_since_boot++;
+                document.getElementById('uptime').textContent = formatTime(currentData.data.airtime.seconds_since_boot);
+            }
+        }, 1000);
+
+        document.getElementById('ip-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') connect(); });
+        document.getElementById('refresh-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') connect(); });
+        document.getElementById('range-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') startRangeScan(); });
+
+        if (savedIp) connect();
+    </script>
+</body>
+</html>
