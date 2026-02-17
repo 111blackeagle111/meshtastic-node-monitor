@@ -1,5 +1,5 @@
 <!--
-    Meshtastic Node Monitor - Versione Base (IP Fisso)
+    Meshtastic Node Monitor - Versione Avanzata (Network Discovery)
     Copyright (C) 2025 Meshtastic Node Monitor Contributors
 
     This program is free software: you can redistribute it and/or modify
@@ -77,6 +77,133 @@
         .subtitle {
             color: var(--text-dim);
             font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .ip-input, .refresh-input {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .ip-input {
+            width: 180px;
+        }
+
+        .refresh-input {
+            width: 80px;
+            text-align: center;
+        }
+
+        .ip-input:focus, .refresh-input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #00ff88;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: rgba(255, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            height: 42px;
+        }
+
+        .status-badge.online {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--success);
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: var(--bg-dark);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 68, 68, 0.2);
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
         }
 
         .grid {
@@ -92,7 +219,12 @@
             padding: 24px;
             position: relative;
             overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+            opacity: 0.6;
+        }
+
+        .card.active {
+            opacity: 1;
         }
 
         .card:hover {
@@ -109,6 +241,12 @@
             right: 0;
             height: 3px;
             background: linear-gradient(90deg, var(--accent), transparent);
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .card.active::before {
+            opacity: 1;
         }
 
         .card-header {
@@ -133,6 +271,7 @@
             font-weight: 700;
             margin: 10px 0;
             font-family: 'Courier New', monospace;
+            min-height: 3rem;
         }
 
         .value-unit {
@@ -156,6 +295,11 @@
         .status-indicator.active {
             background: rgba(0, 255, 136, 0.15);
             color: var(--success);
+        }
+
+        .status-indicator.error {
+            background: rgba(255, 68, 68, 0.15);
+            color: var(--danger);
         }
 
         .status-dot {
@@ -205,6 +349,7 @@
             font-weight: 600;
             color: var(--accent);
             font-family: 'Courier New', monospace;
+            min-height: 1.2rem;
         }
 
         .stat-label {
@@ -227,7 +372,7 @@
             opacity: 0.6;
             border-radius: 2px 2px 0 0;
             min-height: 4px;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, height 0.5s ease;
         }
 
         .bar:hover {
@@ -244,6 +389,10 @@
             margin-top: 10px;
             font-size: 1.2rem;
             letter-spacing: 1px;
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .signal-bars {
@@ -257,6 +406,7 @@
             width: 4px;
             background: var(--text-dim);
             border-radius: 2px;
+            transition: background 0.3s;
         }
 
         .signal-bar.active {
@@ -267,12 +417,24 @@
             font-family: 'Courier New', monospace;
             color: var(--accent);
             font-size: 1.1rem;
+            min-height: 1.5rem;
+        }
+
+        .last-update {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            margin-top: 5px;
         }
 
         @media (max-width: 600px) {
             h1 { font-size: 1.8rem; }
             .value-large { font-size: 2rem; }
             .grid { grid-template-columns: 1fr; }
+            .controls { flex-direction: column; width: 100%; align-items: stretch; }
+            .ip-input, .refresh-input { width: 100%; }
+            .btn { width: 100%; justify-content: center; }
+            .input-group { width: 100%; }
         }
     </style>
 </head>
@@ -280,45 +442,67 @@
     <div class="container">
         <header>
             <h1>Meshtastic Node</h1>
-            <div class="subtitle">Monitoraggio in tempo reale</div>
+            <div class="subtitle">Monitoraggio singolo nodo</div>
+
+            <div class="controls">
+                <div class="input-group">
+                    <label class="input-label">Indirizzo IP</label>
+                    <input type="text" id="ip-input" class="ip-input" placeholder="192.168.2.191" value="192.168.2.191">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Refresh (sec)</label>
+                    <input type="number" id="refresh-input" class="refresh-input" value="10" min="10" max="60" step="1">
+                </div>
+
+                <button class="btn" id="connect-btn" onclick="connect()">
+                    <span>Connetti</span>
+                </button>
+
+                <div class="status-badge" id="conn-status">
+                    <span class="status-dot"></span>
+                    <span>Offline</span>
+                </div>
+            </div>
+            <div class="error-msg" id="error-msg"></div>
         </header>
 
         <div class="grid">
             <!-- Power Card -->
-            <div class="card">
+            <div class="card" id="card-power">
                 <div class="card-header">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M16 20h-8v-8h-4l8-10 8 10h-4v8zm-2-2v-6h2.5l-4.5-5.5-4.5 5.5h2.5v6h4z"/>
                     </svg>
                     Alimentazione
                 </div>
-                <div class="value-large" id="battery-percent">100<span class="value-unit">%</span></div>
+                <div class="value-large" id="battery-percent">--<span class="value-unit">%</span></div>
                 <div class="progress-bar">
-                    <div class="progress-fill" id="battery-bar" style="width: 100%"></div>
+                    <div class="progress-fill" id="battery-bar" style="width: 0%"></div>
                 </div>
                 <div class="stats-row">
                     <div class="stat-item">
-                        <span class="stat-value" id="voltage">4.49</span>
+                        <span class="stat-value" id="voltage">--</span>
                         <span class="stat-label">Volt</span>
                     </div>
                     <div class="stat-item">
-                        <span class="status-indicator active" id="charging-status">
+                        <span class="status-indicator" id="charging-status">
                             <span class="status-dot"></span>
-                            In Carica
+                            --
                         </span>
                     </div>
                 </div>
             </div>
 
             <!-- WiFi Card -->
-            <div class="card">
+            <div class="card" id="card-wifi">
                 <div class="card-header">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>
                     </svg>
                     Connettività
                 </div>
-                <div class="ip-display" id="ip-address">192.168.2.191</div>
+                <div class="ip-display" id="ip-address">--</div>
                 <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
                     <div class="signal-bars" id="signal-bars">
                         <div class="signal-bar" style="height: 6px"></div>
@@ -327,31 +511,31 @@
                         <div class="signal-bar" style="height: 18px"></div>
                     </div>
                     <span style="color: var(--text-dim); font-size: 0.9rem;">
-                        RSSI: <span id="rssi" style="color: var(--accent); font-family: monospace;">-71</span> dBm
+                        RSSI: <span id="rssi" style="color: var(--accent); font-family: monospace;">--</span> dBm
                     </span>
                 </div>
-                <div class="status-indicator" style="margin-top: 15px;">
+                <div class="status-indicator" style="margin-top: 15px;" id="wifi-status">
                     <span class="status-dot"></span>
-                    Connesso
+                    --
                 </div>
             </div>
 
             <!-- Radio Card -->
-            <div class="card">
+            <div class="card" id="card-radio">
                 <div class="card-header">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
                     </svg>
                     Radio LoRa
                 </div>
-                <div class="value-large" id="frequency">869.5<span class="value-unit">MHz</span></div>
+                <div class="value-large" id="frequency">--<span class="value-unit">MHz</span></div>
                 <div class="stats-row">
                     <div class="stat-item">
-                        <span class="stat-value" id="channel">1</span>
+                        <span class="stat-value" id="channel">--</span>
                         <span class="stat-label">Canale</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-value" id="utilization">6.6</span>
+                        <span class="stat-value" id="utilization">--</span>
                         <span class="stat-label">% Utilizzo</span>
                     </div>
                 </div>
@@ -361,7 +545,7 @@
             </div>
 
             <!-- Memory Card -->
-            <div class="card">
+            <div class="card" id="card-memory">
                 <div class="card-header">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M17 3H7c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7V5h10v14zM9 7h6v2H9zm0 4h6v2H9zm0 4h6v2H9z"/>
@@ -372,26 +556,26 @@
                 <div style="margin-bottom: 15px;">
                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
                         <span>Heap</span>
-                        <span id="heap-text">19KB / 253KB</span>
+                        <span id="heap-text">-- / --</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" id="heap-bar" style="width: 92%; background: linear-gradient(90deg, var(--warning), var(--danger))"></div>
+                        <div class="progress-fill" id="heap-bar" style="width: 0%; background: linear-gradient(90deg, var(--warning), var(--danger))"></div>
                     </div>
                 </div>
 
                 <div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
                         <span>Filesystem</span>
-                        <span id="fs-text">40KB / 1536KB</span>
+                        <span id="fs-text">-- / --</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" id="fs-bar" style="width: 3%"></div>
+                        <div class="progress-fill" id="fs-bar" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
 
             <!-- Device Card -->
-            <div class="card">
+            <div class="card" id="card-device">
                 <div class="card-header">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
@@ -399,25 +583,25 @@
                     Sistema
                 </div>
                 <div style="text-align: center; padding: 20px 0;">
-                    <div class="uptime-counter" id="uptime">02:25:07</div>
+                    <div class="uptime-counter" id="uptime">--:--:--</div>
                     <div style="color: var(--text-dim); font-size: 0.85rem; margin-top: 5px;">Uptime</div>
                 </div>
                 <div class="stats-row">
                     <div class="stat-item">
-                        <span class="stat-value" id="reboots">6,184</span>
+                        <span class="stat-value" id="reboots">--</span>
                         <span class="stat-label">Reboot</span>
                     </div>
                     <div class="stat-item">
-                        <span class="status-indicator active">
+                        <span class="status-indicator" id="system-status">
                             <span class="status-dot"></span>
-                            OK
+                            --
                         </span>
                     </div>
                 </div>
             </div>
 
             <!-- Traffic Card -->
-            <div class="card">
+            <div class="card" id="card-traffic">
                 <div class="card-header">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
@@ -426,143 +610,256 @@
                 </div>
                 <div class="stats-row" style="border: none; margin-top: 0;">
                     <div class="stat-item">
-                        <span class="stat-value" id="rx-last">142K</span>
+                        <span class="stat-value" id="rx-last">--</span>
                         <span class="stat-label">RX ultimo</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-value" id="tx-last">81K</span>
+                        <span class="stat-value" id="tx-last">--</span>
                         <span class="stat-label">TX ultimo</span>
                     </div>
                 </div>
-                <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-dim); text-align: center;">
-                    Periodi di 1 ora | Storico: 8 periodi
-                </div>
+                <div class="last-update" id="last-update">Inserisci IP e premi Connetti</div>
             </div>
         </div>
     </div>
 
     <script>
-        // Dati dal tuo JSON
-        const data = {
-            "airtime": {
-                "channel_utilization": 6.56166648864746,
-                "periods_to_log": 8,
-                "rx_all_log": [28318, 68984, 57607, 0, 0, 0, 0, 0],
-                "rx_log": [52244, 66313, 142569, 0, 0, 0, 0, 0],
-                "seconds_per_period": 3600,
-                "seconds_since_boot": 8707,
-                "tx_log": [35261, 31513, 81496, 0, 0, 0, 0, 0],
-                "utilization_tx": 1.50338888168335
-            },
-            "device": {
-                "reboot_counter": 6184
-            },
-            "memory": {
-                "fs_free": 1531904,
-                "fs_total": 1572864,
-                "fs_used": 40960,
-                "heap_free": 19472,
-                "heap_total": 253304,
-                "psram_free": 0,
-                "psram_total": 0
-            },
-            "power": {
-                "battery_percent": 100,
-                "battery_voltage_mv": 4489,
-                "has_battery": "true",
-                "has_usb": "true",
-                "is_charging": "true"
-            },
-            "radio": {
-                "frequency": 869.525024414062,
-                "lora_channel": 1
-            },
-            "wifi": {
-                "ip": "192.168.2.191",
-                "rssi": -71
-            },
-            "status": "ok"
-        };
+        let refreshInterval = null;
+        let currentData = null;
+        let uptimeInterval = null;
 
-        // Formattazione numeri
-        const formatNum = (n) => n.toLocaleString('it-IT');
+        // Carica dati salvati
+        const savedIp = localStorage.getItem('meshtastic_ip');
+        const savedRefresh = localStorage.getItem('meshtastic_refresh');
+
+        if (savedIp) document.getElementById('ip-input').value = savedIp;
+        if (savedRefresh) document.getElementById('refresh-input').value = savedRefresh;
+
+        const formatNum = (n) => n ? n.toLocaleString('it-IT') : '--';
+
         const formatTime = (seconds) => {
+            if (!seconds || seconds < 0) return '--:--:--';
             const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
             const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-            const s = (seconds % 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
             return `${h}:${m}:${s}`;
         };
 
-        // Popola i dati
-        document.getElementById('battery-percent').innerHTML = `${data.power.battery_percent}<span class="value-unit">%</span>`;
-        document.getElementById('battery-bar').style.width = `${data.power.battery_percent}%`;
-        document.getElementById('voltage').textContent = (data.power.battery_voltage_mv / 1000).toFixed(2);
-        document.getElementById('charging-status').innerHTML = `
-            <span class="status-dot"></span>
-            ${data.power.is_charging === "true" ? 'In Carica' : 'Batteria'}
-        `;
+        function showError(msg) {
+            const errEl = document.getElementById('error-msg');
+            errEl.textContent = msg;
+            errEl.classList.add('show');
+            setTimeout(() => errEl.classList.remove('show'), 5000);
+        }
 
-        document.getElementById('ip-address').textContent = data.wifi.ip;
-        document.getElementById('rssi').textContent = data.wifi.rssi;
+        function updateConnectionStatus(online) {
+            const badge = document.getElementById('conn-status');
+            const cards = document.querySelectorAll('.card');
 
-        // Signal bars animation
-        const rssi = data.wifi.rssi;
-        const bars = document.querySelectorAll('.signal-bar');
-        let activeBars = 0;
-        if (rssi > -50) activeBars = 4;
-        else if (rssi > -60) activeBars = 3;
-        else if (rssi > -70) activeBars = 2;
-        else if (rssi > -80) activeBars = 1;
+            if (online) {
+                badge.classList.add('online');
+                badge.innerHTML = '<span class="status-dot"></span><span>Online</span>';
+                cards.forEach(c => c.classList.add('active'));
+            } else {
+                badge.classList.remove('online');
+                badge.innerHTML = '<span class="status-dot"></span><span>Offline</span>';
+                cards.forEach(c => c.classList.remove('active'));
+            }
+        }
 
-        bars.forEach((bar, idx) => {
-            if (idx < activeBars) bar.classList.add('active');
+        async function connect() {
+            const ip = document.getElementById('ip-input').value.trim();
+            const refreshSec = parseInt(document.getElementById('refresh-input').value) || 10;
+
+            if (!ip) {
+                showError('Inserisci un indirizzo IP valido');
+                return;
+            }
+
+            if (refreshSec < 5) {
+                showError('Intervello minimo: 5 secondi');
+                return;
+            }
+
+            // Salva impostazioni
+            localStorage.setItem('meshtastic_ip', ip);
+            localStorage.setItem('meshtastic_refresh', refreshSec);
+
+            const btn = document.getElementById('connect-btn');
+            btn.innerHTML = '<span class="loading-spinner"></span>';
+            btn.disabled = true;
+
+            try {
+                await fetchData(ip);
+
+                // Avvia polling
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => fetchData(ip), refreshSec * 1000);
+
+                // Avvia contatore uptime locale
+                if (uptimeInterval) clearInterval(uptimeInterval);
+                uptimeInterval = setInterval(() => {
+                    if (currentData && currentData.data && currentData.data.airtime) {
+                        currentData.data.airtime.seconds_since_boot++;
+                        document.getElementById('uptime').textContent =
+                            formatTime(currentData.data.airtime.seconds_since_boot);
+                    }
+                }, 1000);
+
+            } catch (error) {
+                showError('Errore di connessione: ' + error.message);
+                updateConnectionStatus(false);
+            } finally {
+                btn.innerHTML = '<span>Connetti</span>';
+                btn.disabled = false;
+            }
+        }
+
+        async function fetchData(ip) {
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000);
+
+                const response = await fetch(`http://${ip}/json/report`, {
+                    signal: controller.signal,
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                clearTimeout(timeout);
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                currentData = data;
+                updateUI(data);
+                updateConnectionStatus(true);
+
+            } catch (error) {
+                updateConnectionStatus(false);
+                throw error;
+            }
+        }
+
+        function updateUI(data) {
+            if (!data || !data.data) return;
+            const d = data.data;
+
+            // Power
+            if (d.power) {
+                document.getElementById('battery-percent').innerHTML =
+                    `${d.power.battery_percent}<span class="value-unit">%</span>`;
+                document.getElementById('battery-bar').style.width = `${d.power.battery_percent}%`;
+                document.getElementById('voltage').textContent =
+                    (d.power.battery_voltage_mv / 1000).toFixed(2);
+
+                const chargingEl = document.getElementById('charging-status');
+                const isCharging = d.power.is_charging === "true" || d.power.is_charging === true;
+                chargingEl.innerHTML = `<span class="status-dot"></span>${isCharging ? 'In Carica' : 'Batteria'}`;
+                chargingEl.className = isCharging ? 'status-indicator active' : 'status-indicator';
+            }
+
+            // WiFi
+            if (d.wifi) {
+                document.getElementById('ip-address').textContent = d.wifi.ip;
+                document.getElementById('rssi').textContent = d.wifi.rssi;
+
+                // Signal bars
+                const bars = document.querySelectorAll('.signal-bar');
+                bars.forEach(bar => bar.classList.remove('active'));
+                const rssi = d.wifi.rssi;
+                let active = 0;
+                if (rssi > -50) active = 4;
+                else if (rssi > -60) active = 3;
+                else if (rssi > -70) active = 2;
+                else if (rssi > -80) active = 1;
+                bars.forEach((bar, i) => { if (i < active) bar.classList.add('active'); });
+
+                const wifiStatus = document.getElementById('wifi-status');
+                if (rssi < -80) {
+                    wifiStatus.className = 'status-indicator error';
+                    wifiStatus.innerHTML = '<span class="status-dot"></span>Debole';
+                } else {
+                    wifiStatus.className = 'status-indicator active';
+                    wifiStatus.innerHTML = '<span class="status-dot"></span>Connesso';
+                }
+            }
+
+            // Radio
+            if (d.radio) {
+                document.getElementById('frequency').innerHTML =
+                    `${d.radio.frequency.toFixed(3)}<span class="value-unit">MHz</span>`;
+                document.getElementById('channel').textContent = d.radio.lora_channel;
+            }
+
+            if (d.airtime) {
+                document.getElementById('utilization').textContent =
+                    d.airtime.channel_utilization.toFixed(1);
+                document.getElementById('uptime').textContent =
+                    formatTime(d.airtime.seconds_since_boot);
+
+                // Chart
+                const chart = document.getElementById('airtime-chart');
+                chart.innerHTML = '';
+                if (d.airtime.rx_log) {
+                    const valid = d.airtime.rx_log.filter(x => x > 0);
+                    const max = valid.length > 0 ? Math.max(...valid) : 1;
+                    d.airtime.rx_log.slice(0, 8).forEach(val => {
+                        const h = val > 0 ? (val / max) * 100 : 4;
+                        const bar = document.createElement('div');
+                        bar.className = 'bar';
+                        bar.style.height = `${Math.max(h, 4)}%`;
+                        bar.title = `RX: ${formatNum(val)}`;
+                        chart.appendChild(bar);
+                    });
+                }
+
+                // Traffic
+                const rx = d.airtime.rx_log ? [...d.airtime.rx_log].reverse().find(x => x > 0) : 0;
+                const tx = d.airtime.tx_log ? [...d.airtime.tx_log].reverse().find(x => x > 0) : 0;
+                document.getElementById('rx-last').textContent = rx > 999 ? (rx/1000).toFixed(1)+'K' : rx;
+                document.getElementById('tx-last').textContent = tx > 999 ? (tx/1000).toFixed(1)+'K' : tx;
+            }
+
+            // Memory
+            if (d.memory) {
+                const heapUsed = d.memory.heap_total - d.memory.heap_free;
+                const heapPct = (heapUsed / d.memory.heap_total) * 100;
+                document.getElementById('heap-text').textContent =
+                    `${Math.round(heapUsed/1024)}KB / ${Math.round(d.memory.heap_total/1024)}KB`;
+                document.getElementById('heap-bar').style.width = `${heapPct}%`;
+
+                const fsPct = (d.memory.fs_used / d.memory.fs_total) * 100;
+                document.getElementById('fs-text').textContent =
+                    `${Math.round(d.memory.fs_used/1024)}KB / ${Math.round(d.memory.fs_total/1024)}KB`;
+                document.getElementById('fs-bar').style.width = `${fsPct}%`;
+            }
+
+            // Device
+            if (d.device) {
+                document.getElementById('reboots').textContent = formatNum(d.device.reboot_counter);
+            }
+
+            const sysStatus = document.getElementById('system-status');
+            if (data.status === 'ok') {
+                sysStatus.innerHTML = '<span class="status-dot"></span>OK';
+                sysStatus.className = 'status-indicator active';
+            }
+
+            // Timestamp
+            document.getElementById('last-update').textContent =
+                `Aggiornato: ${new Date().toLocaleTimeString('it-IT')}`;
+        }
+
+        // Enter key su input
+        document.getElementById('ip-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') connect();
+        });
+        document.getElementById('refresh-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') connect();
         });
 
-        document.getElementById('frequency').innerHTML =
-            `${(data.radio.frequency).toFixed(1)}<span class="value-unit">MHz</span>`;
-        document.getElementById('channel').textContent = data.radio.lora_channel;
-        document.getElementById('utilization').textContent = data.airtime.channel_utilization.toFixed(1);
-
-        // Airtime chart
-        const chartContainer = document.getElementById('airtime-chart');
-        const maxVal = Math.max(...data.airtime.rx_log, ...data.airtime.tx_log, 1);
-        data.airtime.rx_log.slice(0, 6).forEach((val, idx) => {
-            const height = (val / maxVal) * 100;
-            const bar = document.createElement('div');
-            bar.className = 'bar';
-            bar.style.height = `${Math.max(height, 10)}%`;
-            bar.title = `Periodo ${idx + 1}: RX ${formatNum(val)}`;
-            chartContainer.appendChild(bar);
-        });
-
-        // Memory
-        const heapUsed = data.memory.heap_total - data.memory.heap_free;
-        const heapPercent = (heapUsed / data.memory.heap_total) * 100;
-        document.getElementById('heap-text').textContent =
-            `${Math.round(heapUsed/1024)}KB / ${Math.round(data.memory.heap_total/1024)}KB`;
-        document.getElementById('heap-bar').style.width = `${heapPercent}%`;
-
-        const fsPercent = (data.memory.fs_used / data.memory.fs_total) * 100;
-        document.getElementById('fs-text').textContent =
-            `${Math.round(data.memory.fs_used/1024)}KB / ${Math.round(data.memory.fs_total/1024)}KB`;
-        document.getElementById('fs-bar').style.width = `${fsPercent}%`;
-
-        // Device
-        document.getElementById('uptime').textContent = formatTime(data.airtime.seconds_since_boot);
-        document.getElementById('reboots').textContent = formatNum(data.device.reboot_counter);
-
-        // Traffic
-        document.getElementById('rx-last').textContent =
-            Math.round(data.airtime.rx_log[2] / 1000) + 'K';
-        document.getElementById('tx-last').textContent =
-            Math.round(data.airtime.tx_log[2] / 1000) + 'K';
-
-        // Auto-refresh simulation (optional)
-        setInterval(() => {
-            data.airtime.seconds_since_boot++;
-            document.getElementById('uptime').textContent =
-                formatTime(data.airtime.seconds_since_boot);
-        }, 1000);
+        // Auto-connect se c'è un IP salvato
+        if (savedIp) connect();
     </script>
 </body>
 </html>
