@@ -27,31 +27,29 @@ meshtastic-node-monitor/
 
 ### 1️⃣ Versione Base: `monitor-fixed-ip.html`
 
-> **Caso d'uso**: Monitoraggio di un singolo nodo con IP noto e fisso
+> **Caso d'uso**: Monitoraggio semplice di un singolo nodo
 
 **Caratteristiche:**
-- ✅ IP del nodo **hardcoded** nel codice (`192.168.2.191`)
-- ✅ Dati **statici** (mock JSON incluso)
-- ✅ Visualizzazione **read-only**
+- ✅ **Input IP configurabile** - Inserisci l'IP del nodo in un campo input
+- ✅ **Refresh automatico** - Aggiornamento dati ogni N secondi (configurabile, min 10s)
+- ✅ **Persistenza** - Salva IP e intervallo nel browser (localStorage)
+- ✅ Dati **in tempo reale** via HTTP API
 - ✅ Design responsive con tema dark
-- ✅ Nessuna configurazione richiesta
+- ✅ Indicatore stato connessione (Online/Offline)
 
 **Quando usarla:**
-- Hai un solo nodo da monitorare
-- L'IP del nodo non cambia mai
-- Vuoi una dashboard semplice e immediata
-- Non hai bisogno di aggiornamenti in tempo reale
+- Hai un singolo nodo da monitorare
+- Vuoi un'interfaccia pulita senza funzioni di scansione
+- Preferisci configurare manualmente IP e intervallo di aggiornamento
+- Non hai bisogno di cercare automaticamente i nodi nella rete
 
-```javascript
-// IP configurato direttamente nel codice
-const data = {
-    "wifi": {
-        "ip": "192.168.2.191",  // ← Modifica qui
-        "rssi": -71
-    },
-    // ... altri dati
-};
-```
+**Utilizzo:**
+1. Apri il file nel browser
+2. Inserisci l'IP del nodo nel campo **"Indirizzo IP"** (es. `192.168.2.191`)
+3. Imposta l'intervallo di refresh in secondi (default: 10s, minimo: 5s)
+4. Clicca **"Connetti"**
+
+L'IP e l'intervallo vengono salvati automaticamente nel browser per i prossimi accessi.
 
 ---
 
