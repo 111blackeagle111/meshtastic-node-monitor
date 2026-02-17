@@ -73,35 +73,23 @@ Dovresti vedere un JSON con i dati del nodo.
 
 ## Configurazione Versione Base
 
-La versione base (`monitor-fixed-ip.html`) ha l'IP hardcoded nel file.
+La versione base (`monitor-fixed-ip.html`) utilizza un campo input per connettersi dinamicamente al nodo. Non è necessario modificare il codice sorgente.
 
-### Modificare IP Statico
+### Connessione al Nodo
 
-1. Apri `monitor-fixed-ip.html` in un editor di testo
-2. Trova la sezione `const data = {` (riga ~429)
-3. Modifica l'IP:
+1. Apri `monitor-fixed-ip.html` nel browser
+2. Inserisci l'IP del tuo nodo Meshtastic nel campo **"Indirizzo IP"** (es. `192.168.2.191`)
+3. Imposta l'intervallo di aggiornamento (default: 10 secondi, minimo: 5 secondi)
+4. Clicca **"Connetti"**
 
-```javascript
-const data = {
-    // ... altri campi ...
-    "wifi": {
-        "ip": "192.168.1.100",  // ← MODIFICA QUI
-        "rssi": -71
-    },
-    // ...
-};
-```
+L'indirizzo IP e l'intervallo di refresh vengono salvati automaticamente nel browser (localStorage), quindi al prossimo accesso saranno già precompilati.
 
-4. Salva e apri il file nel browser
+### Cambiare Nodo o Intervallo
 
-### Aggiornare Dati Manualmente
-
-Per avere dati reali dal tuo nodo:
-
-1. Apri il browser e vai a `http://{IP_NODO}/json/report`
-2. Copia tutto il contenuto JSON
-3. Incollalo nel file al posto di `const data = { ... }`
-4. Salva
+Per utilizzare un diverso nodo o modificare la frequenza di aggiornamento:
+- Modifica i valori nei campi input
+- Clicca nuovamente **"Connetti"**
+- I nuovi valori sovrascrivono automaticamente quelli salvati
 
 ---
 
